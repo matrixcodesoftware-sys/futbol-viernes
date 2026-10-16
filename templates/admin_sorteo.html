@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, estrellas %}
+{% block title %}Admin — Sorteo{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <p class="eyebrow">Sorteo</p>
+  <h1 class="capitalize">{{ match.date | fecha_es }}</h1>
+  <p class="muted">{{ confirmados|length }} jugadores confirmados (titulares)</p>
+  {% if espera %}
+    <p class="muted small">+{{ espera|length }} en lista de espera, no entran en el sorteo (ver abajo).</p>
+  {% endif %}
+  <p class="muted small">
+    El sorteo balancea los equipos combinando, en partes iguales, las
+    estrellas, la tasa de victoria y los partidos jugados de cada uno —
+    por eso puede que la suma de estrellas por equipo no quede
+    perfectamente pareja, aunque el nivel general sí lo esté.
+  </p>
+
+  <div class="row gap wrap mt-3">
+    <form method="post" action="{{ url_for('admin_sorteo_generar') }}">
+      <input type="hidden" name="matchId" value="{{ match.id }}">
+      <button type="submit" class="btn btn-primary" {{ 'disabled' if confirmados|length < 2 }}>
+        {{ 'Rehacer sorteo' if hay_equipos else 'Generar sorteo' }}
+      </button>
+    </form>
+    {% if hay_equipos %}
+      <form method="post" action="{{ url_for('admin_sorteo_deshacer') }}">
+        <input type="hidden" name="matchId" value="{{ match.id }}">
+        <button type="submit" class="btn btn-outline">Deshacer</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if confirmados|length < 2 %}
+    <p class="text-warn mt-2">Hace falta al menos 2 jugadores confirmados para sortear.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Anotar jugador manualmente</h2>
+  <p class="muted small">
+    Para cuando alguien avisa por WhatsApp o no puede entrar a la app —
+    lo anotás vos como si hubiera confirmado.
+  </p>
+  {% if not disponibles %}
+    <p class="muted small mt-2">No hay más jugadores activos para anotar (o ya están todos anotados).</p>
+  {% else %}
+    <form method="post" action="{{ url_for('admin_asistencia_agregar') }}" class="row gap wrap mt-2">
+      <input type="hidden" name="matchId" value="{{ match.id }}">
+      <select name="userId" class="input">
+        {% for j in disponibles %}
+          <option value="{{ j.id }}">{{ j.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Anotar</button>
+    </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Confirmados ({{ confirmados|length }}{% if espera %} + {{ espera|length }} en espera{% endif %})</h2>
+  {% if confirmados %}
+    <p class="muted small">
+      Podés armar los equipos vos mismo tocando "Negro" o "Blanco" en cada
+      jugador, sin esperar al sorteo automático.
+    </p>
+  {% endif %}
+  {% if not confirmados and not espera %}
+    <p class="muted">Todavía nadie confirmó asistencia.</p>
+  {% else %}
+    <ul class="list divide">
+      {% for j in confirmados %}
+        {% set equipo_actual = equipo_por_id.get(j.id) %}
+        <li class="list-row wrap">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <span class="grow small">
+            {{ j.name }}
+            {% if equipo_actual == 'NEGRO' %}<span class="badge badge-dark">Negro</span>{% endif %}
+            {% if equipo_actual == 'BLANCO' %}<span class="badge badge-outline">Blanco</span>{% endif %}
+          </span>
+          <div class="row gap">
+            <form method="post" action="{{ url_for('admin_sorteo_asignar') }}">
+              <input type="hidden" name="matchId" value="{{ match.id }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <input type="hidden" name="equipo" value="NEGRO">
+              <button type="submit" class="btn btn-xs {{ 'btn-dark' if equipo_actual == 'NEGRO' else 'btn-outline' }}">Negro</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_sorteo_asignar') }}">
+              <input type="hidden" name="matchId" value="{{ match.id }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <input type="hidden" name="equipo" value="BLANCO">
+              <button type="submit" class="btn btn-xs {{ 'btn-outline-activo' if equipo_actual == 'BLANCO' else 'btn-outline' }}">Blanco</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_asistencia_quitar') }}">
+              <input type="hidden" name="matchId" value="{{ match.id }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Quitar</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+      {% for j in espera %}
+        <li class="list-row">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <span class="grow small">{{ j.name }} <span class="badge badge-dark">espera</span></span>
+          <form method="post" action="{{ url_for('admin_asistencia_quitar') }}">
+            <input type="hidden" name="matchId" value="{{ match.id }}">
+            <input type="hidden" name="userId" value="{{ j.id }}">
+            <button type="submit" class="btn btn-danger-soft btn-xs">Quitar</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+
+{% if hay_equipos %}
+<div class="grid-2">
+  <section class="card">
+    <div class="team-head team-head-dark">
+      <h2>Equipo Negro</h2>
+      <span>&#9733; {{ suma_negro }}</span>
+    </div>
+    <ul class="list">
+      {% for j in negro %}
+        <li class="list-row">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <div class="grow">
+            <p class="small strong">{{ j.name }}</p>
+            {{ estrellas(j.stars, 'xs') }}
+          </div>
+          <form method="post" action="{{ url_for('admin_sorteo_mover') }}">
+            <input type="hidden" name="matchId" value="{{ match.id }}">
+            <input type="hidden" name="userId" value="{{ j.id }}">
+            <input type="hidden" name="equipo" value="BLANCO">
+            <button type="submit" class="btn btn-outline btn-xs">Mover →</button>
+          </form>
+        </li>
+      {% else %}
+        <p class="muted small">Sin jugadores</p>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <div class="team-head team-head-light">
+      <h2>Equipo Blanco</h2>
+      <span>&#9733; {{ suma_blanco }}</span>
+    </div>
+    <ul class="list">
+      {% for j in blanco %}
+        <li class="list-row">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <div class="grow">
+            <p class="small strong">{{ j.name }}</p>
+            {{ estrellas(j.stars, 'xs') }}
+          </div>
+          <form method="post" action="{{ url_for('admin_sorteo_mover') }}">
+            <input type="hidden" name="matchId" value="{{ match.id }}">
+            <input type="hidden" name="userId" value="{{ j.id }}">
+            <input type="hidden" name="equipo" value="NEGRO">
+            <button type="submit" class="btn btn-outline btn-xs">Mover →</button>
+          </form>
+        </li>
+      {% else %}
+        <p class="muted small">Sin jugadores</p>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

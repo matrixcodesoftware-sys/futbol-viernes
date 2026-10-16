@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, estrellas %}
+{% block title %}Mi perfil{% endblock %}
+{% block content %}
+
+<section class="card">
+  <div class="row gap">
+    {{ avatar(usuario_actual.name, usuario_actual.photo_url, 64) }}
+    <div>
+      <h1>{{ usuario_actual.name }}</h1>
+      <p class="muted">{{ usuario_actual.email }}</p>
+    </div>
+  </div>
+
+  <div class="row gap mt-3">
+    <span class="muted">Tu nivel:</span>
+    {{ estrellas(usuario_actual.stars) }}
+  </div>
+  <p class="muted small">El nivel lo define el organizador para armar equipos parejos.</p>
+</section>
+
+<section class="card">
+  <h2>Mis estadísticas</h2>
+  {% if not stats or stats.jugados == 0 %}
+    <p class="muted">Todavía no jugaste ningún partido con resultado cargado.</p>
+  {% else %}
+    <div class="row gap wrap mt-2">
+      <div class="stat-box">
+        <p class="stat-n">{{ stats.jugados }}</p>
+        <p class="muted small">Jugados</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-n text-success">{{ stats.ganados }}</p>
+        <p class="muted small">Ganados</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-n text-draw">{{ stats.empatados }}</p>
+        <p class="muted small">Empatados</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-n muted">{{ stats.perdidos }}</p>
+        <p class="muted small">Perdidos</p>
+      </div>
+      <div class="stat-box">
+        <p class="stat-n">&#9917; {{ stats.goles }}</p>
+        <p class="muted small">Goles</p>
+      </div>
+    </div>
+    <p class="muted small mt-3">
+      {{ stats.porcentaje }}% de victorias · Puesto {{ puesto }} de {{ total_jugadores }} en el ranking
+    </p>
+    {% if usuario_actual.role == 'ADMIN' %}
+      <a href="{{ url_for('admin_ranking') }}" class="btn btn-outline btn-sm mt-2">Ver ranking completo</a>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Editar mis datos</h2>
+  <form method="post" action="{{ url_for('perfil_editar') }}" class="form">
+    <label for="name">Nombre y apellido</label>
+    <input id="name" name="name" type="text" required value="{{ usuario_actual.name }}">
+
+    <p class="muted small mt-3">
+      Para cambiar tu contraseña completá estos tres campos (si no querés
+      cambiarla, dejalos vacíos):
+    </p>
+    <label for="currentPassword">Contraseña actual</label>
+    <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password">
+    <label for="newPassword">Contraseña nueva</label>
+    <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="6">
+    <label for="confirmNewPassword">Repetir contraseña nueva</label>
+    <input id="confirmNewPassword" name="confirmNewPassword" type="password" autocomplete="new-password" minlength="6">
+
+    <button type="submit" class="btn btn-primary btn-sm mt-3">Guardar cambios</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Foto de perfil</h2>
+  <form method="post" action="{{ url_for('perfil_foto') }}" enctype="multipart/form-data" class="form">
+    <input type="file" name="foto" accept="image/*" required>
+    <button type="submit" class="btn btn-primary btn-sm">Subir foto</button>
+  </form>
+</section>
+{% endblock %}

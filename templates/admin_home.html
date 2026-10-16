@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Admin — Partidos{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h1>Crear partido</h1>
+  <p class="muted">
+    Elegí el día — puede ser cualquiera, no solo viernes, y podés tener más
+    de un partido programado a la vez (por ejemplo martes y viernes). Apenas
+    lo creás, los jugadores ya lo ven en su pantalla de "Partido" para
+    confirmar si van o no.
+  </p>
+  <form method="post" action="{{ url_for('admin_partidos_crear') }}" class="form mt-2">
+    <label for="fecha">Fecha</label>
+    <input id="fecha" name="fecha" type="date" required value="{{ fecha_sugerida }}">
+    <button type="submit" class="btn btn-primary mt-3">Crear partido</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Próximos partidos</h2>
+  {% if not partidos %}
+    <p class="muted">No hay partidos programados todavía.</p>
+  {% else %}
+    <ul class="list divide">
+      {% for item in partidos %}
+        <li class="list-row-col">
+          <div class="row between">
+            <p class="strong capitalize">{{ item.match.date | fecha_es }}</p>
+            <form method="post"
+                  action="{{ url_for('admin_partidos_cancelar', match_id=item.match.id) }}"
+                  onsubmit="return confirm('¿Cancelar este partido? Los jugadores dejarán de verlo.');">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Cancelar</button>
+            </form>
+          </div>
+          <p class="muted small">
+            Estado: <strong>{{ 'Sorteado' if item.match.status == 'SORTEADO' else 'Abierto' }}</strong>
+            · {{ item.titulares|length }}/{{ item.cupo }} confirmados
+            {% if item.espera %}· {{ item.espera|length }} en espera{% endif %}
+          </p>
+          <div class="row gap wrap mt-2">
+            <a href="{{ url_for('admin_sorteo_ver', match_id=item.match.id) }}" class="btn btn-outline btn-sm">Sortear equipos</a>
+            {% if item.match.status == 'SORTEADO' %}
+              <a href="{{ url_for('admin_resultado_ver', match_id=item.match.id) }}" class="btn btn-outline btn-sm">Cargar resultado</a>
+            {% endif %}
+            <a href="{{ item.whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">📲 Compartir por WhatsApp</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

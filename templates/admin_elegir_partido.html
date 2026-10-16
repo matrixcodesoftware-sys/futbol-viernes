@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Admin — {{ titulo }}{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h1>{{ titulo }}</h1>
+  {% if not partidos %}
+    <p class="muted mt-2">{{ vacio_mensaje }}</p>
+    <a href="{{ url_for('admin_home') }}" class="btn btn-outline btn-sm mt-3">Ir a Partidos</a>
+  {% else %}
+    <p class="muted">Tenés más de un partido programado — elegí para cuál:</p>
+    <ul class="list divide mt-3">
+      {% for m in partidos %}
+        <li class="list-row">
+          <span class="grow strong capitalize">{{ m.date | fecha_es }}</span>
+          <a href="{{ url_for(destino, match_id=m.id) }}" class="btn btn-primary btn-sm">Elegir</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

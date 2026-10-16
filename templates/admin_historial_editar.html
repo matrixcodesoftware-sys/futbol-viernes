@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Admin — Editar partido{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <p class="eyebrow">Editar partido</p>
+  <h1 class="capitalize">{{ match.date | fecha_es }}</h1>
+  <p class="muted small">
+    Corregí acá los jugadores de cada equipo o el resultado si los cargaste
+    mal — el ranking se recalcula solo con los cambios.
+  </p>
+
+  <form method="post" action="{{ url_for('admin_historial_fecha_cambiar', match_id=match.id) }}" class="row gap wrap mt-3">
+    <input type="date" name="fecha" value="{{ match.date }}" class="input">
+    <button type="submit" class="btn btn-outline btn-sm">Cambiar fecha</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Resultado</h2>
+  <p class="muted small">
+    {% if match.winner == 'EMPATE' %}
+      Resultado actual: <strong class="text-draw">Empate</strong>
+    {% elif match.winner %}
+      Resultado actual: ganó el equipo <strong>{{ 'Negro' if match.winner == 'NEGRO' else 'Blanco' }}</strong>
+    {% else %}
+      Todavía no se cargó un resultado para este partido.
+    {% endif %}
+  </p>
+  <div class="row gap wrap mt-2">
+    <form method="post" action="{{ url_for('admin_historial_ganador_cambiar', match_id=match.id) }}">
+      <input type="hidden" name="ganador" value="NEGRO">
+      <button type="submit" class="btn {{ 'btn-dark' if match.winner == 'NEGRO' else 'btn-outline' }}">Ganó Negro</button>
+    </form>
+    <form method="post" action="{{ url_for('admin_historial_ganador_cambiar', match_id=match.id) }}">
+      <input type="hidden" name="ganador" value="BLANCO">
+      <button type="submit" class="btn {{ 'btn-outline-activo' if match.winner == 'BLANCO' else 'btn-outline' }}">Ganó Blanco</button>
+    </form>
+    <form method="post" action="{{ url_for('admin_historial_ganador_cambiar', match_id=match.id) }}">
+      <input type="hidden" name="ganador" value="EMPATE">
+      <button type="submit" class="btn {{ 'btn-draw' if match.winner == 'EMPATE' else 'btn-outline' }}">Empate</button>
+    </form>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="team-head team-head-dark">
+      <h2>Equipo Negro</h2>
+      <span>{{ negro|length }}</span>
+    </div>
+    <ul class="list divide">
+      {% for j in negro %}
+        <li class="list-row wrap">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <span class="grow small">{{ j.name }}</span>
+          <div class="row gap">
+            <form method="post" action="{{ url_for('admin_historial_jugador_mover', match_id=match.id) }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <input type="hidden" name="equipo" value="BLANCO">
+              <button type="submit" class="btn btn-outline btn-xs">Mover →</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_historial_jugador_quitar', match_id=match.id) }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Quitar</button>
+            </form>
+          </div>
+        </li>
+      {% else %}
+        <p class="muted small">Sin jugadores</p>
+      {% endfor %}
+    </ul>
+
+    {% if disponibles %}
+      <form method="post" action="{{ url_for('admin_historial_jugador_agregar', match_id=match.id) }}" class="row gap wrap mt-3">
+        <input type="hidden" name="equipo" value="NEGRO">
+        <select name="userId" class="input">
+          {% for j in disponibles %}
+            <option value="{{ j.id }}">{{ j.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Agregar a Negro</button>
+      </form>
+    {% endif %}
+
+    {% if negro %}
+      <form method="post" action="{{ url_for('admin_historial_goles_guardar', match_id=match.id) }}" class="mt-3">
+        <h2 class="small strong">&#9917; Goles</h2>
+        <ul class="list divide mt-2">
+          {% for j in negro %}
+            <li class="list-row">
+              <span class="grow small">{{ j.name }}</span>
+              <input type="number" min="0" name="goles_{{ j.id }}" value="{{ j.goals or 0 }}" class="input input-xs">
+            </li>
+          {% endfor %}
+        </ul>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Guardar goles</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="team-head team-head-light">
+      <h2>Equipo Blanco</h2>
+      <span>{{ blanco|length }}</span>
+    </div>
+    <ul class="list divide">
+      {% for j in blanco %}
+        <li class="list-row wrap">
+          {{ avatar(j.name, j.photo_url, 32) }}
+          <span class="grow small">{{ j.name }}</span>
+          <div class="row gap">
+            <form method="post" action="{{ url_for('admin_historial_jugador_mover', match_id=match.id) }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <input type="hidden" name="equipo" value="NEGRO">
+              <button type="submit" class="btn btn-outline btn-xs">Mover →</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_historial_jugador_quitar', match_id=match.id) }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Quitar</button>
+            </form>
+          </div>
+        </li>
+      {% else %}
+        <p class="muted small">Sin jugadores</p>
+      {% endfor %}
+    </ul>
+
+    {% if disponibles %}
+      <form method="post" action="{{ url_for('admin_historial_jugador_agregar', match_id=match.id) }}" class="row gap wrap mt-3">
+        <input type="hidden" name="equipo" value="BLANCO">
+        <select name="userId" class="input">
+          {% for j in disponibles %}
+            <option value="{{ j.id }}">{{ j.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Agregar a Blanco</button>
+      </form>
+    {% endif %}
+
+    {% if blanco %}
+      <form method="post" action="{{ url_for('admin_historial_goles_guardar', match_id=match.id) }}" class="mt-3">
+        <h2 class="small strong">&#9917; Goles</h2>
+        <ul class="list divide mt-2">
+          {% for j in blanco %}
+            <li class="list-row">
+              <span class="grow small">{{ j.name }}</span>
+              <input type="number" min="0" name="goles_{{ j.id }}" value="{{ j.goals or 0 }}" class="input input-xs">
+            </li>
+          {% endfor %}
+        </ul>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Guardar goles</button>
+      </form>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <a href="{{ url_for('admin_historial') }}" class="btn btn-outline btn-block">Volver al historial</a>
+</section>
+{% endblock %}

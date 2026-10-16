@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Admin — Resultado{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <p class="eyebrow">Cargar resultado</p>
+  <h1 class="capitalize">{{ match.date | fecha_es }}</h1>
+
+  {% if match.status != 'SORTEADO' %}
+    <p class="text-warn mt-2">
+      Todavía no se sortearon los equipos para este partido. Andá a la pestaña "Sorteo" primero.
+    </p>
+  {% else %}
+    <p class="muted">Negro: {{ negro|length }} jugadores · Blanco: {{ blanco|length }} jugadores</p>
+    <div class="row gap wrap mt-3">
+      <form method="post" action="{{ url_for('admin_resultado_cargar') }}">
+        <input type="hidden" name="matchId" value="{{ match.id }}">
+        <input type="hidden" name="ganador" value="NEGRO">
+        <button type="submit" class="btn btn-dark btn-lg">Ganó Negro</button>
+      </form>
+      <form method="post" action="{{ url_for('admin_resultado_cargar') }}">
+        <input type="hidden" name="matchId" value="{{ match.id }}">
+        <input type="hidden" name="ganador" value="BLANCO">
+        <button type="submit" class="btn btn-outline btn-lg">Ganó Blanco</button>
+      </form>
+      <form method="post" action="{{ url_for('admin_resultado_cargar') }}">
+        <input type="hidden" name="matchId" value="{{ match.id }}">
+        <input type="hidden" name="ganador" value="EMPATE">
+        <button type="submit" class="btn btn-draw btn-lg">Empate</button>
+      </form>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

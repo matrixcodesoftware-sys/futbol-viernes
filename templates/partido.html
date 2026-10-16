@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Partidos{% endblock %}
+{% block content %}
+
+{% if not partidos %}
+  <section class="card">
+    <p class="eyebrow">Próximos partidos</p>
+    <h1>Todavía no hay ningún partido programado</h1>
+    <p class="muted mt-2">Avisale al organizador para que cargue el próximo.</p>
+  </section>
+{% endif %}
+
+{% for item in partidos %}
+  <section class="card">
+    <p class="eyebrow">Partido</p>
+    <h1 class="capitalize">{{ item.match.date | fecha_es }}</h1>
+
+    {% if item.match.status == 'SORTEADO' %}
+      <p class="text-success">Los equipos ya fueron sorteados. ¡Nos vemos en la cancha!</p>
+    {% endif %}
+
+    <div class="mt-4">
+      {% if item.ya_confirmado %}
+        <form method="post" action="{{ url_for('partido_cancelar') }}">
+          <input type="hidden" name="matchId" value="{{ item.match.id }}">
+          <button type="submit" class="btn btn-danger-soft btn-block">
+            ✓ Vas al partido — tocá para avisar que no vas
+          </button>
+        </form>
+        {% if item.en_espera %}
+          <p class="text-draw small mt-2">
+            Estás en la lista de espera (cupo lleno). Si se libera un lugar, entrás automáticamente.
+          </p>
+        {% endif %}
+      {% else %}
+        <form method="post" action="{{ url_for('partido_confirmar') }}">
+          <input type="hidden" name="matchId" value="{{ item.match.id }}">
+          <button type="submit" class="btn btn-success btn-block">Confirmar que voy</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Titulares confirmados ({{ item.titulares|length }}/{{ item.cupo }})</h2>
+    {% if not item.titulares %}
+      <p class="muted">Todavía nadie confirmó asistencia.</p>
+    {% else %}
+      <ul class="list">
+        {% for j in item.titulares %}
+          <li class="list-row">
+            {{ avatar(j.name, j.photo_url, 36) }}
+            <span>{{ j.name }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+
+  {% if item.espera %}
+    <section class="card">
+      <h2>Lista de espera ({{ item.espera|length }})</h2>
+      <ul class="list">
+        {% for j in item.espera %}
+          <li class="list-row">
+            {{ avatar(j.name, j.photo_url, 36) }}
+            <span>{{ j.name }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+{% endfor %}
+{% endblock %}

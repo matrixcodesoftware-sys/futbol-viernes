@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Admin — Historial anterior{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h1>Historial anterior</h1>
+  <p class="muted">
+    Para sumar los partidos que ya jugaron antes de usar esta app — por
+    ejemplo lo que tenés anotado en un Excel. Cargá cuántos partidos
+    ganó, empató y perdió cada uno hasta ahora; estos números se suman a
+    los partidos que la app vaya registrando de acá en adelante, así el
+    ranking queda al día con todo lo jugado en el año.
+  </p>
+  <p class="muted small">
+    No hace falta saber contra quién jugó cada uno ni qué equipo salió
+    campeón en cada fecha — solo el total acumulado de cada jugador.
+  </p>
+
+  {% if not jugadores %}
+    <p class="muted mt-3">No hay jugadores activos todavía.</p>
+  {% else %}
+    <form method="post" action="{{ url_for('admin_historial_previo_guardar') }}" class="mt-3">
+      <ul class="list divide">
+        {% for j in jugadores %}
+          <li class="list-row-col">
+            <p class="strong">{{ j.name }}</p>
+            <div class="row gap wrap mt-2">
+              <label class="small muted">
+                Ganados<br>
+                <input type="number" min="0" name="wins_{{ j.id }}" value="{{ j.wins_adj }}" class="input input-xs">
+              </label>
+              <label class="small muted">
+                Empatados<br>
+                <input type="number" min="0" name="draws_{{ j.id }}" value="{{ j.draws_adj }}" class="input input-xs">
+              </label>
+              <label class="small muted">
+                Perdidos<br>
+                <input type="number" min="0" name="losses_{{ j.id }}" value="{{ j.losses_adj }}" class="input input-xs">
+              </label>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+      <button type="submit" class="btn btn-primary mt-3">Guardar historial</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

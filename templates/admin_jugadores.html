@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Admin — Jugadores{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h2>Crear jugador</h2>
+  <p class="muted small">
+    Cargalo vos directamente, sin código de invitación — ideal para ir
+    llenando la lista y el historial rápido. Si dejás usuario o contraseña
+    vacíos, se completan solos (y cada uno los puede cambiar después desde
+    su perfil).
+  </p>
+  <form method="post" action="{{ url_for('admin_jugadores_crear') }}" class="form mt-2">
+    <label for="crearNombre">Nombre</label>
+    <input id="crearNombre" name="name" type="text" required placeholder="Nombre y apellido">
+
+    <label for="crearUsuario">Usuario <span class="muted small">(opcional)</span></label>
+    <input id="crearUsuario" name="email" type="text" placeholder="se genera automático si lo dejás vacío">
+
+    <label for="crearPassword">Contraseña <span class="muted small">(opcional)</span></label>
+    <input id="crearPassword" name="password" type="text" placeholder="123456 por defecto">
+
+    <button type="submit" class="btn btn-primary mt-3">Crear jugador</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Código de invitación</h2>
+  <p class="muted small">Compartíselo solo a la gente del partido. Quien no lo tenga no puede crear una cuenta.</p>
+  <form method="post" action="{{ url_for('admin_jugadores_codigo') }}" class="row gap wrap mt-2">
+    <input type="text" name="inviteCode" value="{{ invite_code }}" class="mono input">
+    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Cupo de titulares</h2>
+  <p class="muted small">
+    Cuántos jugadores entran como titulares por partido (7v7 = 14). El que
+    confirma de más queda en la lista de espera.
+  </p>
+  <form method="post" action="{{ url_for('admin_jugadores_cupo') }}" class="row gap wrap mt-2">
+    <input type="number" name="cupo" value="{{ cupo }}" min="2" class="mono input input-sm">
+    <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Jugadores ({{ jugadores|length }})</h2>
+  <ul class="list divide">
+    {% for j in jugadores %}
+      <li class="list-row wrap">
+        {{ avatar(j.name, j.photo_url, 40) }}
+        <div class="grow">
+          <p class="strong">
+            {{ j.name }}
+            {% if j.role == 'ADMIN' %}<span class="badge badge-dark">ADMIN</span>{% endif %}
+            {% if not j.active %}<span class="badge badge-red">DADO DE BAJA</span>{% endif %}
+          </p>
+          <p class="muted small">{{ j.email }}</p>
+        </div>
+
+        <form method="post" action="{{ url_for('admin_jugadores_estrellas') }}" class="star-form">
+          <input type="hidden" name="userId" value="{{ j.id }}">
+          {% for n in range(1, 6) %}
+            <button type="submit" name="stars" value="{{ n }}"
+                    class="star-btn {{ 'llena' if n <= j.stars else 'vacia' }}"
+                    title="{{ n }} estrellas">&#9733;</button>
+          {% endfor %}
+        </form>
+
+        <div class="row gap wrap">
+          <a href="{{ url_for('admin_jugador_editar', user_id=j.id) }}" class="btn btn-outline btn-xs">Editar</a>
+
+          {% if j.id != usuario_actual.id %}
+            <form method="post" action="{{ url_for('admin_jugadores_rol') }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <button type="submit" class="btn btn-outline btn-xs">
+                {{ 'Sacar admin' if j.role == 'ADMIN' else 'Hacer admin' }}
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('admin_jugadores_activo') }}">
+              <input type="hidden" name="userId" value="{{ j.id }}">
+              <button type="submit" class="btn btn-outline btn-xs">
+                {{ 'Reactivar' if not j.active else 'Dar de baja' }}
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('admin_jugador_eliminar', user_id=j.id) }}"
+                  onsubmit="return confirm('¿Eliminar este jugador definitivamente? Se borra su cuenta y su participación en partidos pasados, y no se puede deshacer. Si solo querés que no aparezca más para partidos nuevos, mejor usá \'Dar de baja\'.');">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Eliminar</button>
+            </form>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

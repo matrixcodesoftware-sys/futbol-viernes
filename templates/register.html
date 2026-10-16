@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Crear cuenta — Fútbol de los Viernes{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <h1>⚽ Fútbol de los Viernes</h1>
+    <p class="muted">Creá tu cuenta de jugador para anotarte a los partidos.</p>
+
+    <form method="post" class="form">
+      <label for="name">Nombre y apellido</label>
+      <input id="name" name="name" type="text" required value="{{ form.get('name', '') }}">
+
+      <label for="email">Usuario</label>
+      <input id="email" name="email" type="text" required placeholder="ej: juan.perez — inventalo, no hace falta que sea un email" value="{{ form.get('email', '') }}">
+
+      <label for="password">Contraseña</label>
+      <input id="password" name="password" type="password" required minlength="6">
+
+      <label for="confirmPassword">Repetir contraseña</label>
+      <input id="confirmPassword" name="confirmPassword" type="password" required minlength="6">
+
+      <label for="inviteCode">Código de invitación</label>
+      <input id="inviteCode" name="inviteCode" type="text" required placeholder="Te lo pasa el organizador">
+
+      {% if error %}<p class="alert alert-error">{{ error }}</p>{% endif %}
+
+      <button type="submit" class="btn btn-primary">Crear cuenta</button>
+    </form>
+
+    <p class="muted center">¿Ya tenés cuenta? <a href="{{ url_for('login') }}">Iniciá sesión</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Admin — Historial{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h1>Historial de partidos</h1>
+  <p class="muted">Partidos jugados en total: <strong>{{ total_jugados }}</strong></p>
+</section>
+
+<section class="card">
+  <h2>Buscar partidos</h2>
+  <form method="get" class="form mt-2">
+    <label for="fSemana">Semana</label>
+    <input id="fSemana" name="semana" type="week" value="{{ f_semana }}">
+
+    <label for="fMes">Mes</label>
+    <input id="fMes" name="mes" type="month" value="{{ f_mes }}">
+
+    <div class="row gap wrap mt-2">
+      <div class="grow">
+        <label for="fDesde">Desde</label>
+        <input id="fDesde" name="desde" type="date" value="{{ f_desde }}">
+      </div>
+      <div class="grow">
+        <label for="fHasta">Hasta</label>
+        <input id="fHasta" name="hasta" type="date" value="{{ f_hasta }}">
+      </div>
+    </div>
+
+    <label for="fGanador">Ganó</label>
+    <select id="fGanador" name="ganador">
+      <option value="" {{ 'selected' if not f_ganador }}>Cualquiera</option>
+      <option value="NEGRO" {{ 'selected' if f_ganador == 'NEGRO' }}>Equipo Negro</option>
+      <option value="BLANCO" {{ 'selected' if f_ganador == 'BLANCO' }}>Equipo Blanco</option>
+      <option value="EMPATE" {{ 'selected' if f_ganador == 'EMPATE' }}>Empate</option>
+    </select>
+
+    <p class="muted small mt-2">
+      Si elegís una semana o un mes, se usa eso y no hace falta completar "Desde"/"Hasta".
+    </p>
+
+    <div class="row gap wrap mt-3">
+      <button type="submit" class="btn btn-primary">Buscar</button>
+      <a href="{{ url_for('admin_historial') }}" class="btn btn-outline">Limpiar filtros</a>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  {% if hay_filtro %}
+    <h2>Resultados ({{ historial|length }})</h2>
+  {% elif ver_todos %}
+    <h2>Todos los partidos ({{ historial|length }})</h2>
+  {% else %}
+    <h2>Últimos partidos</h2>
+    {% if total_jugados > historial|length %}
+      <p class="muted small">
+        Mostrando los últimos {{ historial|length }} de {{ total_jugados }} —
+        <a href="{{ url_for('admin_historial', todos=1) }}">ver todos</a>
+        o usá los filtros de arriba.
+      </p>
+    {% endif %}
+  {% endif %}
+
+  {% if not historial %}
+    <p class="muted mt-2">
+      {% if hay_filtro %}
+        No hay partidos que coincidan con la búsqueda.
+      {% else %}
+        Todavía no se jugó ningún partido.
+      {% endif %}
+    </p>
+  {% else %}
+    <ul class="list divide mt-2">
+      {% for h in historial %}
+        <li>
+          <details class="historial-item">
+            <summary>
+              <span class="grow">
+                <p class="strong capitalize">{{ h.match.date | fecha_es }}</p>
+                <p class="muted small">
+                  {% if h.match.winner == 'EMPATE' %}
+                    <strong class="text-draw">Empate</strong>
+                  {% else %}
+                    Ganó el equipo <strong>{{ 'Negro' if h.match.winner == 'NEGRO' else 'Blanco' }}</strong>
+                  {% endif %}
+                  ({{ h.negro|length }} vs {{ h.blanco|length }})
+                </p>
+              </span>
+              <span class="chevron">&#9662;</span>
+            </summary>
+
+            <div class="grid-2 mt-3">
+              <div>
+                <div class="team-head team-head-dark">
+                  <h2>Equipo Negro</h2>
+                  {% if h.match.winner == 'NEGRO' %}
+                    <span class="badge badge-amber">&#127942; Ganó</span>
+                  {% elif h.match.winner == 'EMPATE' %}
+                    <span class="badge badge-amber">Empate</span>
+                  {% endif %}
+                </div>
+                <ul class="list">
+                  {% for j in h.negro %}
+                    <li class="list-row">
+                      {{ avatar(j.name, j.photo_url, 28) }}
+                      <span class="small grow">{{ j.name }}</span>
+                      {% if j.goals %}
+                        <span class="muted small">&#9917; {{ j.goals }}</span>
+                      {% endif %}
+                    </li>
+                  {% else %}
+                    <p class="muted small">Sin jugadores</p>
+                  {% endfor %}
+                </ul>
+              </div>
+
+              <div>
+                <div class="team-head team-head-light">
+                  <h2>Equipo Blanco</h2>
+                  {% if h.match.winner == 'BLANCO' %}
+                    <span class="badge badge-amber">&#127942; Ganó</span>
+                  {% elif h.match.winner == 'EMPATE' %}
+                    <span class="badge badge-amber">Empate</span>
+                  {% endif %}
+                </div>
+                <ul class="list">
+                  {% for j in h.blanco %}
+                    <li class="list-row">
+                      {{ avatar(j.name, j.photo_url, 28) }}
+                      <span class="small grow">{{ j.name }}</span>
+                      {% if j.goals %}
+                        <span class="muted small">&#9917; {{ j.goals }}</span>
+                      {% endif %}
+                    </li>
+                  {% else %}
+                    <p class="muted small">Sin jugadores</p>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </details>
+
+          <div class="row gap mt-2">
+            <a href="{{ url_for('admin_historial_editar_form', match_id=h.match.id) }}" class="btn btn-outline btn-xs">Editar</a>
+            <form method="post" action="{{ url_for('admin_historial_borrar', match_id=h.match.id) }}"
+                  onsubmit="return confirm('¿Borrar este partido del historial? Se descuenta del ranking y no se puede deshacer.');">
+              <button type="submit" class="btn btn-danger-soft btn-xs">Borrar</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}

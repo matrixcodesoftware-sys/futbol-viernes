@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Admin — Ranking{% endblock %}
+{% block content %}
+{% include "_admin_nav.html" %}
+
+<section class="card">
+  <h1>Ranking</h1>
+  {% if not ranking %}
+    <p class="muted">Todavía no hay datos.</p>
+  {% else %}
+    <ol class="list divide">
+      {% for j in ranking %}
+        <li class="list-row">
+          <span class="rank-n">{{ loop.index }}</span>
+          {{ avatar(j.name, j.photo_url, 36) }}
+          <div class="grow">
+            <p class="strong">{{ j.name }}</p>
+            <p class="muted small">{{ j.jugados }} jugados · {{ j.porcentaje }}% victorias</p>
+          </div>
+          <div class="text-right">
+            <p class="record">
+              <span class="record-item text-success" title="Victorias">{{ j.ganados }}V</span>
+              <span class="record-item text-draw" title="Empates">{{ j.empatados }}E</span>
+              <span class="record-item text-danger" title="Derrotas">{{ j.perdidos }}D</span>
+            </p>
+            <p class="muted small mt-2">&#9917; {{ j.goles }} goles</p>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
+</section>
+
+{% set goleadores = (ranking|selectattr('goles', 'gt', 0)|list)|sort(attribute='goles', reverse=true) %}
+{% if goleadores %}
+<section class="card">
+  <h2>&#9917; Goleadores</h2>
+  <p class="muted small">El que va primero acá se lleva el regalo a fin de año.</p>
+  <ol class="list divide mt-2">
+    {% for j in goleadores[:5] %}
+      <li class="list-row">
+        <span class="rank-n">{{ loop.index }}</span>
+        {{ avatar(j.name, j.photo_url, 32) }}
+        <span class="grow small strong">{{ j.name }}</span>
+        <span class="strong">{{ j.goles }}</span>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Fútbol de los Viernes{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  {% if usuario_actual %}
+    {% from "_macros.html" import avatar %}
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="{{ url_for('partido') }}">⚽ Fuchibol</a>
+        <nav class="nav">
+          <a href="{{ url_for('partido') }}">Partido</a>
+          <a href="{{ url_for('perfil') }}">Perfil</a>
+          {% if usuario_actual.role == 'ADMIN' %}
+            <a href="{{ url_for('admin_home') }}">Admin</a>
+          {% endif %}
+        </nav>
+        <div class="topbar-user">
+          {{ avatar(usuario_actual.name, usuario_actual.photo_url, 32) }}
+          <form method="post" action="{{ url_for('logout') }}">
+            <button type="submit" class="btn btn-ghost btn-sm">Salir</button>
+          </form>
+        </div>
+      </div>
+    </header>
+  {% endif %}
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for categoria, mensaje in messages %}
+          <p class="alert alert-{{ categoria }}">{{ mensaje }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
